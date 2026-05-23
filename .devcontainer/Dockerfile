@@ -1,11 +1,13 @@
 FROM ghcr.io/linuxserver/baseimage-kasmvnc:ubuntujammy
 
-# Install XFCE, Micro, Thunar, Thunar Archive Plugin, and dependencies
+# Install Git, Sudo, XFCE, Micro, Thunar, Thunar Archive Plugin
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
     curl \
     wget \
     gnupg \
+    git \
+    sudo \
     micro \
     xfce4 \
     xfce4-goodies \
@@ -21,10 +23,12 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Create a wrapper script for Chrome to enforce flags globally on every startup
-RUN mv /usr/bin/google-chrome /usr/bin/google-chrome-bin && \
-    echo '#!/bin/bash\nexec /usr/bin/google-chrome-bin --no-sandbox --disable-dev-shm-usage --ignore-gpu-blocklist --enable-webgl --use-gl=angle "$@"' > /usr/bin/google-chrome && \
-    chmod +x /usr/bin/google-chrome
+# Safely create a wrapper script for Chrome to enforce flags globally
+# This removes the default symlinks and points our wrapper directly to the binary
+RUN rm -f /usr/bin/google-chrome /usr/bin/google-chrome-stable && \
+    echo '#!/bin/bash\nexec /opt/google/chrome/google-chrome --no-sandbox --disable-dev-shm-usage --ignore-gpu-blocklist --enable-webgl --use-gl=angle "$@"' > /usr/bin/google-chrome && \
+    chmod +x /usr/bin/google-chrome && \
+    ln -s /usr/bin/google-chrome /usr/bin/google-chrome-stable
 
 # Configure KasmVNC to launch XFCE on startup
 RUN mkdir -p /defaults && \
